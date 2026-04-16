@@ -156,21 +156,21 @@ class FrequencyTable {
         // Ordena os dados
         const sortedData = [...this.data].sort((a, b) => a - b);
 
-        // Calcula parâmetros com floor (sem casas decimais)
-        const min = Math.floor(Math.min(...sortedData));
-        const max = Math.floor(Math.max(...sortedData));
-        const range = max - min;
+        // Calcula parâmetros
+        const min = Math.min(...sortedData);
+        const max = Math.max(...sortedData);
+        const totalAmplitude = max - min;
 
-        // Número de classes
-        const numClasses = this.calculateNumClasses();
-
-        // Intervalo de classe (sempre arredonda para cima para garantir cobertura)
-        let classWidth = Math.ceil(range / numClasses);
+        // Amplitude da classe: amplitude total / raiz de n, sempre arredonda para cima
+        let classWidth = Math.ceil(totalAmplitude / Math.sqrt(this.data.length));
 
         // Se o intervalo é muito pequeno, usar 1
         if (classWidth === 0) {
             classWidth = 1;
         }
+
+        // Calcula o número de classes necessárias para cobrir a amplitude total
+        const numClasses = Math.ceil(totalAmplitude / classWidth);
 
         // Cria as classes
         const classes = this.createClasses(min, numClasses, classWidth);
@@ -191,9 +191,10 @@ class FrequencyTable {
 
     calculateNumClasses() {
         const n = this.data.length;
-        // Usando Regra de Sturges por padrão
-        const numClasses = Math.ceil(1 + 3.3 * Math.log10(n));
-        return Math.max(3, numClasses); // Mínimo 3 classes
+        // Raiz quadrada do número de elementos
+        const sqrtN = Math.sqrt(n);
+        const numClasses = Math.round(sqrtN);
+        return Math.max(3, numClasses);
     }
 
     createClasses(min, numClasses, classWidth) {
@@ -201,15 +202,18 @@ class FrequencyTable {
         let start = Math.floor(min);
 
         for (let i = 0; i < numClasses; i++) {
+            // Cada classe tem amplitude = classWidth
             const end = Math.floor(start + classWidth);
+            
             classes.push({
-                start: Math.floor(start),
-                end: Math.floor(end),
+                start: start,
+                end: end,
                 frequency: 0,
                 cumulativeFreq: 0,
                 relativeFreq: 0,
                 cumulativeRelativeFreq: 0
             });
+            
             start = end;
         }
 
@@ -217,16 +221,24 @@ class FrequencyTable {
     }
 
     calculateFrequencies(classes, data) {
-        // Frequência simples
+        // Frequência simples - Validação de intervalo correto
         for (let value of data) {
-            for (let classItem of classes) {
-                if (value >= classItem.start && value < classItem.end) {
-                    classItem.frequency++;
-                    break;
-                } else if (value === classItem.end && classItem === classes[classes.length - 1]) {
-                    // O último valor (máximo) entra na última classe
-                    classItem.frequency++;
-                    break;
+            for (let i = 0; i < classes.length; i++) {
+                const classItem = classes[i];
+                const isLastClass = (i === classes.length - 1);
+                
+                // Para a última classe: value >= start E value <= end
+                // Para outras classes: value >= start E value < end
+                if (isLastClass) {
+                    if (value >= classItem.start && value <= classItem.end) {
+                        classItem.frequency++;
+                        break;
+                    }
+                } else {
+                    if (value >= classItem.start && value < classItem.end) {
+                        classItem.frequency++;
+                        break;
+                    }
                 }
             }
         }
@@ -249,7 +261,6 @@ class FrequencyTable {
         const decimalPlaces = 2; // Padrão de 2 casas decimais
         const tbody = document.getElementById('tableBody');
         const totalFi = document.getElementById('totalFi');
-        const totalFa = document.getElementById('totalFa');
         const totalFiXi = document.getElementById('totalFiXi');
         const totalFiXi2 = document.getElementById('totalFiXi2');
 
@@ -265,18 +276,20 @@ class FrequencyTable {
             const xi = (classItem.start + classItem.end) / 2;
             const fiXi = classItem.frequency * xi;
             const fiXi2 = classItem.frequency * Math.pow(xi, 2);
+            const fr = (classItem.frequency / data.length) * 100;
 
             sumFiXi += fiXi;
             sumFiXi2 += fiXi2;
 
             const row = `
                 <tr>
-                    <td class="fw-bold">${Math.floor(classItem.start)}--${Math.floor(classItem.end)}</td>
+                    <td class="fw-bold">${classItem.start}--${classItem.end}</td>
                     <td>${classItem.frequency}</td>
+                    <td>${xi.toFixed(decimalPlaces)}</td>
                     <td>${classItem.cumulativeFreq}</td>
-                    <td>${Math.floor(xi)}</td>
+                    <td>${fr.toFixed(2)}%</td>
                     <td>${fiXi.toFixed(decimalPlaces)}</td>
-                    <td>${fiXi2.toFixed(0)}</td>
+                    <td>${fiXi2.toFixed(decimalPlaces)}</td>
                 </tr>
             `;
 
@@ -285,7 +298,7 @@ class FrequencyTable {
 
         totalFi.textContent = data.length;
         totalFiXi.textContent = sumFiXi.toFixed(decimalPlaces);
-        totalFiXi2.textContent = Math.floor(sumFiXi2);
+        totalFiXi2.textContent = sumFiXi2.toFixed(decimalPlaces);
 
         // Exibe estatísticas
         this.displayStatistics(data, decimalPlaces);

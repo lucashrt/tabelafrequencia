@@ -28,29 +28,37 @@
                                 <h5 class="mb-0"><i class="bi bi-pencil-square"></i> Entrada de Dados</h5>
                             </div>
                             <div class="card-body">
-                                <h6 class="mb-3"><i class="bi bi-file-earmark-spreadsheet"></i> Upload CSV</h6>
-                                <div class="mb-3">
-                                    <label for="csvFile" class="form-label">Selecione um arquivo CSV:</label>
-                                    <input type="file" id="csvFile" class="form-control form-control-lg" 
-                                           accept=".csv">
-                                    <small class="text-muted d-block mt-2">
-                                        Um número por linha, ou valores separados por vírgula/ponto e vírgula
-                                    </small>
-                                </div>
-                                <div class="alert alert-success" id="csvSuccess" style="display: none;">
-                                    <i class="bi bi-check-circle"></i> <strong id="csvSuccessText"></strong>
-                                </div>
-                                <h6 class="mb-3"><i class="bi bi-pencil"></i> Entrada Manual</h6>
-                                <div class="mb-4">
-                                    <label for="numberInput" class="form-label">Insira um número:</label>
-                                    <div class="input-group">
-                                        <input type="number" id="numberInput" class="form-control form-control-lg" 
-                                               placeholder="Ex: 25.5" step="0.01">
-                                        <button class="btn btn-primary btn-lg" onclick="addNumber()" type="button">
-                                            <i class="bi bi-plus-circle"></i> Adicionar
-                                        </button>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <h6 class="mb-3"><i class="bi bi-file-earmark-spreadsheet"></i> Upload CSV</h6>
+                                        <div class="mb-3">
+                                            <label for="csvFile" class="form-label">Selecione um arquivo CSV:</label>
+                                            <input type="file" id="csvFile" class="form-control form-control-lg" 
+                                                accept=".csv">
+                                            <small class="text-muted">
+                                                Um número por linha, ou valores separados por vírgula/ponto e vírgula
+                                            </small>
+                                        </div>
+                                        <div class="alert alert-success" id="csvSuccess" style="display: none;">
+                                            <i class="bi bi-check-circle"></i> <strong id="csvSuccessText"></strong>
+                                        </div>
                                     </div>
-                                    <small class="text-muted">Pressione Enter ou clique em Adicionar</small>
+                                    <div class="col-md-6">
+                                        <h6 class="mb-3"><i class="bi bi-pencil"></i> Entrada Manual</h6>
+                                        <div class="mb-4">
+                                            <label for="numberInput" class="form-label">Insira um número:</label>
+                                            <div class="input-group">
+                                                <input type="number" id="numberInput" class="form-control form-control-lg" 
+                                                    placeholder="Ex: 25.5" step="0.01">
+                                                <button class="btn btn-primary btn-lg" onclick="addNumber()" type="button">
+                                                    <i class="bi bi-plus-circle"></i> Adicionar
+                                                </button>
+                                            </div>
+                                            <small class="text-muted">
+                                                Pressione Enter ou clique em Adicionar
+                                            </small>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="alert alert-info mb-4"> 
                                     <strong>Dados inseridos:</strong>
@@ -146,8 +154,9 @@
                                             <tr>
                                                 <th>CLASSES</th>
                                                 <th>Fi</th>
-                                                <th>Fa</th>
                                                 <th>Xi</th>
+                                                <th>Fa</th>
+                                                <th>Fr(%)</th>
                                                 <th>Fi.Xi</th>
                                                 <th>Fi.Xi²</th>
                                             </tr>
@@ -158,6 +167,7 @@
                                             <tr class="fw-bold">
                                                 <td>Total</td>
                                                 <td id="totalFi">0</td>
+                                                <td>-</td>
                                                 <td>-</td>
                                                 <td>-</td>
                                                 <td id="totalFiXi">0</td>
@@ -191,7 +201,7 @@
 
     <footer class="bg-dark text-white-50 py-4 mt-5">
         <div class="container text-center">
-            <p class="mb-0">Lucas Hartmann</p>
+            <p class="mb-0">Lucas Hartmann, Eliton Penke, Kaio Dilschneider e Kauan Raddatz</p>
         </div>
     </footer>
 
