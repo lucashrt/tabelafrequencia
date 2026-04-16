@@ -2,6 +2,10 @@ class FrequencyTable {
     constructor() {
         this.data = [];
         this.table = null;
+        this.currentClasses = null;
+        this.currentSumFiXi2 = 0;
+        this.currentMean = 0;
+        this.currentClassWidth = 0;
         this.initializeEventListeners();
     }
 
@@ -170,10 +174,19 @@ class FrequencyTable {
         }
 
         // Calcula o número de classes necessárias para cobrir a amplitude total
-        const numClasses = Math.ceil(totalAmplitude / classWidth);
+        let numClasses = Math.ceil(totalAmplitude / classWidth);
 
         // Cria as classes
-        const classes = this.createClasses(min, numClasses, classWidth);
+        let classes = this.createClasses(min, numClasses, classWidth);
+
+        // Verifica se o máximo corresponde exatamente ao fim da última classe
+        // Se sim, deve criar uma nova classe para ele
+        const lastClassEnd = classes[classes.length - 1].end;
+        if (max === lastClassEnd) {
+            // Adiciona uma nova classe
+            numClasses++;
+            classes = this.createClasses(min, numClasses, classWidth);
+        }
 
         // Calcula frequências
         this.calculateFrequencies(classes, sortedData);
@@ -187,14 +200,6 @@ class FrequencyTable {
 
         // Scroll para resultados
         document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
-    }
-
-    calculateNumClasses() {
-        const n = this.data.length;
-        // Raiz quadrada do número de elementos
-        const sqrtN = Math.sqrt(n);
-        const numClasses = Math.round(sqrtN);
-        return Math.max(3, numClasses);
     }
 
     createClasses(min, numClasses, classWidth) {
@@ -300,8 +305,26 @@ class FrequencyTable {
         totalFiXi.textContent = sumFiXi.toFixed(decimalPlaces);
         totalFiXi2.textContent = sumFiXi2.toFixed(decimalPlaces);
 
+        // Calcula a média
+        const mean = sumFiXi / data.length;
+        
+        // Calcula classWidth
+        const classWidth = classes[0].end - classes[0].start;
+
+        // Armazena informações para cálculos posteriores
+        this.currentClasses = classes;
+        this.currentSumFiXi2 = sumFiXi2;
+        this.currentMean = mean;
+        this.currentClassWidth = classWidth;
+
+        // Exibe informações das classes
+        this.displayClassInfo(classes, data, classWidth);
+
+        // Exibe cálculos de variância
+        this.displayVarianceCalculations(data, sumFiXi2, mean, decimalPlaces);
+
         // Exibe estatísticas
-        this.displayStatistics(data, decimalPlaces);
+        this.displayStatistics(classes, data, decimalPlaces);
 
         // Armazena tabela para export
         this.table = classes.filter(c => c.frequency > 0);
@@ -310,21 +333,165 @@ class FrequencyTable {
         this.generateHistogramChart(classes, data, decimalPlaces);
     }
 
-    displayStatistics(data, decimalPlaces) {
+    displayClassInfo(classes, data, classWidth) {
+        const decimalPlaces = 2;
+        const totalAmplitude = Math.max(...data) - Math.min(...data);
+        const numClasses = classes.length;
+
+        document.getElementById('infoDataCount').textContent = data.length;
+        document.getElementById('infoNumClasses').textContent = numClasses;
+        document.getElementById('infoClassWidth').textContent = classWidth.toFixed(decimalPlaces);
+        document.getElementById('infoTotalAmplitude').textContent = totalAmplitude.toFixed(decimalPlaces);
+        document.getElementById('infoMinLimit').textContent = Math.min(...data).toFixed(decimalPlaces);
+        document.getElementById('infoMaxLimit').textContent = Math.max(...data).toFixed(decimalPlaces);
+    }
+
+    displayVarianceCalculations(data, sumFiXi2, mean, decimalPlaces) {
+        const varianceType = document.querySelector('input[name="varianceType"]:checked').value;
+        const n = data.length;
+
+        // População: (fi.xi² / n) - (média)²
+        // Amostra: [(fi.xi² / n) - (média)²] * (n / (n-1))
+
+        let variance;
+        if (varianceType === 'population') {
+            variance = (sumFiXi2 / n) - Math.pow(mean, 2);
+        } else {
+            // Amostra
+            variance = ((sumFiXi2 / n) - Math.pow(mean, 2)) * (n / (n - 1));
+        }
+
+        // Desvio padrão
+        const stdDev = Math.sqrt(variance);
+
+        // Coeficiente de variação
+        const coeffVar = (stdDev / mean) * 100;
+
+        // Exibe os valores
+        document.getElementById('calcVariance').textContent = variance.toFixed(decimalPlaces);
+        document.getElementById('calcStdDev').textContent = stdDev.toFixed(decimalPlaces);
+        document.getElementById('calcCoeffVar').textContent = coeffVar.toFixed(2) + '%';
+        document.getElementById('calcType').textContent = varianceType === 'population' ? 'População' : 'Amostra';
+
+        // ===== INTERPRETAÇÃO DE VARIABILIDADE =====
+        // 0 a 15% - baixa variabilidade
+        // 15% a 30% - média variabilidade
+        // 30% + alta variabilidade
+        let variabilityType = '';
+        let variabilityDesc = '';
+        let variabilityColor = '';
+
+        if (coeffVar < 15) {
+            variabilityType = 'Baixa Variabilidade';
+            variabilityDesc = 'Dados muito homogêneos';
+            variabilityColor = 'text-success';
+        } else if (coeffVar < 30) {
+            variabilityType = 'Média Variabilidade';
+            variabilityDesc = 'Dados moderadamente dispersos';
+            variabilityColor = 'text-warning';
+        } else {
+            variabilityType = 'Alta Variabilidade';
+            variabilityDesc = 'Dados muito dispersos';
+            variabilityColor = 'text-danger';
+        }
+
+        document.getElementById('variabilityType').textContent = variabilityType;
+        document.getElementById('variabilityType').className = `${variabilityColor} mt-2`;
+        document.getElementById('variabilityDesc').textContent = variabilityDesc;
+
+        // ===== INTERPRETAÇÃO DE TENDÊNCIA CENTRAL =====
+        // 0 a 30% - Média
+        // 30 a 60% - Mediana
+        // 60% + - Moda
+        let centralTendencyType = '';
+        let centralTendencyDesc = '';
+
+        if (coeffVar < 30) {
+            centralTendencyType = 'Usar Média';
+            centralTendencyDesc = 'A média é representativa dos dados';
+        } else if (coeffVar < 60) {
+            centralTendencyType = 'Usar Mediana';
+            centralTendencyDesc = 'A mediana é mais representativa';
+        } else {
+            centralTendencyType = 'Usar Moda';
+            centralTendencyDesc = 'A moda é mais representativa';
+        }
+
+        document.getElementById('centralTendency').textContent = centralTendencyType;
+        document.getElementById('centralTendencyDesc').textContent = centralTendencyDesc;
+    }
+
+    displayStatistics(classes, data, decimalPlaces) {
         const sum = data.reduce((a, b) => a + b, 0);
         const mean = sum / data.length;
-        const min = Math.min(...data);
-        const max = Math.max(...data);
-        const median = Statistics.median(data);
-        const mode = Statistics.mode(data);
 
-        document.getElementById('statCount').textContent = data.length;
-        document.getElementById('statMin').textContent = min.toFixed(decimalPlaces);
-        document.getElementById('statMax').textContent = max.toFixed(decimalPlaces);
+        // ===== MODA =====
+        // Encontra a classe com maior frequência
+        let modalClass = null;
+        let maxFreq = 0;
+        let modalClassIndex = -1;
+
+        for (let i = 0; i < classes.length; i++) {
+            if (classes[i].frequency > maxFreq) {
+                maxFreq = classes[i].frequency;
+                modalClass = classes[i];
+                modalClassIndex = i;
+            }
+        }
+
+        let mode = "N/A";
+        if (modalClass) {
+            const li = modalClass.start;
+            const amplitude = modalClass.end - modalClass.start;
+            
+            // d1 = fi(classe atual) - fi(classe anterior)
+            const d1 = modalClassIndex === 0 ? modalClass.frequency : (modalClass.frequency - classes[modalClassIndex - 1].frequency);
+            
+            // d2 = fi(classe atual) - fi(próxima classe)
+            const d2 = modalClassIndex === classes.length - 1 ? modalClass.frequency : (modalClass.frequency - classes[modalClassIndex + 1].frequency);
+            
+            // Moda = li + (d1 / (d1 + d2)) * amplitude
+            mode = li + ((d1 / (d1 + d2)) * amplitude);
+        }
+
+        // ===== MEDIANA =====
+        // Pos(md) = n/2 se n é par, (n+1)/2 se n é impar
+        const n = data.length;
+        const posMd = n % 2 === 0 ? n / 2 : (n + 1) / 2;
+
+        // Encontra a classe da mediana (onde Pos(md) está no FA)
+        let medianClass = null;
+        let medianClassIndex = -1;
+        let faAnterior = 0;
+
+        for (let i = 0; i < classes.length; i++) {
+            if (posMd <= classes[i].cumulativeFreq) {
+                medianClass = classes[i];
+                medianClassIndex = i;
+                faAnterior = i === 0 ? 0 : classes[i - 1].cumulativeFreq;
+                break;
+            }
+        }
+
+        let median = "N/A";
+        if (medianClass) {
+            const li = medianClass.start;
+            const amplitude = medianClass.end - medianClass.start;
+            const fi = medianClass.frequency;
+            
+            // Mediana = li + ((Pos(md) - fa(anterior)) * amplitude) / fi
+            median = li + (((posMd - faAnterior) * amplitude) / fi);
+        }
+
+        // Exibe os valores
         document.getElementById('statMean').textContent = mean.toFixed(decimalPlaces);
-        document.getElementById('statMedian').textContent = median.toFixed(decimalPlaces);
         
-        // Se moda retornar "N/A", não formata com toFixed
+        if (median === "N/A") {
+            document.getElementById('statMedian').textContent = "N/A";
+        } else {
+            document.getElementById('statMedian').textContent = median.toFixed(decimalPlaces);
+        }
+
         if (mode === "N/A") {
             document.getElementById('statMode').textContent = "N/A";
         } else {
@@ -452,22 +619,149 @@ class FrequencyTable {
 
         // Tenta capturar o gráfico como imagem
         if (chartCanvas) {
-            chartImage = `<p style="margin-top: 30px;"><strong>Histograma com Curva Normal</strong></p>
+            chartImage = `<p style="margin-top: 30px;"><strong>Histograma</strong></p>
                          <img src="${chartCanvas.toDataURL()}" style="max-width: 100%; height: auto;">`;
         }
+
+        // Coleta dados de análise
+        const infoDataCount = document.getElementById('infoDataCount').textContent;
+        const infoNumClasses = document.getElementById('infoNumClasses').textContent;
+        const infoClassWidth = document.getElementById('infoClassWidth').textContent;
+        const infoTotalAmplitude = document.getElementById('infoTotalAmplitude').textContent;
+        const infoMinLimit = document.getElementById('infoMinLimit').textContent;
+        const infoMaxLimit = document.getElementById('infoMaxLimit').textContent;
+
+        const statMean = document.getElementById('statMean').textContent;
+        const statMedian = document.getElementById('statMedian').textContent;
+        const statMode = document.getElementById('statMode').textContent;
+
+        const calcVariance = document.getElementById('calcVariance').textContent;
+        const calcStdDev = document.getElementById('calcStdDev').textContent;
+        const calcCoeffVar = document.getElementById('calcCoeffVar').textContent;
+        const calcType = document.getElementById('calcType').textContent;
+
+        const variabilityType = document.getElementById('variabilityType').textContent;
+        const variabilityDesc = document.getElementById('variabilityDesc').textContent;
+        const centralTendency = document.getElementById('centralTendency').textContent;
+        const centralTendencyDesc = document.getElementById('centralTendencyDesc').textContent;
+
+        // HTML das informações de análise
+        const analysisHtml = `
+            <h2>Tabela de Frequências</h2>
+        `;
 
         printWindow.document.write('<html><head><title>Tabela de Frequências</title>');
         printWindow.document.write('<style>');
         printWindow.document.write('body { font-family: Arial; margin: 20px; }');
-        printWindow.document.write('h2 { color: #333; margin-bottom: 20px; }');
+        printWindow.document.write('h2 { color: #333; margin-bottom: 20px; margin-top: 30px; }');
+        printWindow.document.write('h3 { color: #555; margin-bottom: 15px; margin-top: 20px; }');
         printWindow.document.write('p { color: #555; font-weight: bold; margin-top: 20px; }');
         printWindow.document.write('table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }');
         printWindow.document.write('th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }');
         printWindow.document.write('th { background-color: #f2f2f2; font-weight: bold; }');
         printWindow.document.write('img { margin-top: 20px; max-width: 100%; }');
+        printWindow.document.write('small { color: #999; font-weight: normal; }');
         printWindow.document.write('</style></head><body>');
-        printWindow.document.write('<h2>Tabela de Frequências</h2>');
+        printWindow.document.write(analysisHtml);
         printWindow.document.write(tableHtml);
+        
+        // Informações detalhadas após a tabela
+        printWindow.document.write(`
+            <h2 style="margin-top: 40px;">Análise de Frequências</h2>
+            
+            <div style="display: flex; gap: 30px; margin-bottom: 30px;">
+                <div style="flex: 1;">
+                    <h3>Informações das Classes</h3>
+                    <table style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">
+                        <tr style="border: 1px solid #ddd;">
+                            <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold; background-color: #f2f2f2; width: 50%;">Qtd. de Dados</td>
+                            <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${infoDataCount}</td>
+                        </tr>
+                        <tr style="border: 1px solid #ddd;">
+                            <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold; background-color: #f2f2f2;">Nº de Classes</td>
+                            <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${infoNumClasses}</td>
+                        </tr>
+                        <tr style="border: 1px solid #ddd;">
+                            <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold; background-color: #f2f2f2;">Amp. Classe</td>
+                            <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${infoClassWidth}</td>
+                        </tr>
+                        <tr style="border: 1px solid #ddd;">
+                            <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold; background-color: #f2f2f2;">Amp. Total</td>
+                            <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${infoTotalAmplitude}</td>
+                        </tr>
+                        <tr style="border: 1px solid #ddd;">
+                            <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold; background-color: #f2f2f2;">Lim. Inferior</td>
+                            <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${infoMinLimit}</td>
+                        </tr>
+                        <tr style="border: 1px solid #ddd;">
+                            <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold; background-color: #f2f2f2;">Lim. Superior</td>
+                            <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${infoMaxLimit}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div style="flex: 1;">
+                    <h3>Estatísticas Descritivas</h3>
+                    <table style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">
+                        <tr style="border: 1px solid #ddd;">
+                            <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold; background-color: #f2f2f2; width: 50%;">Média</td>
+                            <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${statMean}</td>
+                        </tr>
+                        <tr style="border: 1px solid #ddd;">
+                            <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold; background-color: #f2f2f2;">Mediana</td>
+                            <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${statMedian}</td>
+                        </tr>
+                        <tr style="border: 1px solid #ddd;">
+                            <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold; background-color: #f2f2f2;">Moda</td>
+                            <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${statMode}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 30px; margin-bottom: 30px;">
+                <div style="flex: 1;">
+                    <h3>Análise de Variabilidade</h3>
+                    <table style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">
+                        <tr style="border: 1px solid #ddd;">
+                            <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold; background-color: #f2f2f2; width: 50%;">Variância</td>
+                            <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${calcVariance}</td>
+                        </tr>
+                        <tr style="border: 1px solid #ddd;">
+                            <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold; background-color: #f2f2f2;">Desvio Padrão</td>
+                            <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${calcStdDev}</td>
+                        </tr>
+                        <tr style="border: 1px solid #ddd;">
+                            <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold; background-color: #f2f2f2;">Coef. Variação</td>
+                            <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${calcCoeffVar}</td>
+                        </tr>
+                        <tr style="border: 1px solid #ddd;">
+                            <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold; background-color: #f2f2f2;">Tipo</td>
+                            <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${calcType}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div style="flex: 1;">
+                    <h3>Interpretações</h3>
+                    <table style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">
+                        <tr style="border: 1px solid #ddd;">
+                            <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold; background-color: #f2f2f2; width: 50%;">Variabilidade</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">
+                                <strong>${variabilityType}</strong><br/><small>${variabilityDesc}</small>
+                            </td>
+                        </tr>
+                        <tr style="border: 1px solid #ddd;">
+                            <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold; background-color: #f2f2f2;">Tendência Central</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">
+                                <strong>${centralTendency}</strong><br/><small>${centralTendencyDesc}</small>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        `);
+        
         printWindow.document.write(chartImage);
         printWindow.document.write('</body></html>');
         printWindow.document.close();
@@ -480,6 +774,10 @@ class FrequencyTable {
     resetForm() {
         this.data = [];
         this.table = null;
+        this.currentClasses = null;
+        this.currentSumFiXi2 = 0;
+        this.currentMean = 0;
+        this.currentClassWidth = 0;
 
         document.getElementById('numberInput').value = '';
         document.getElementById('csvFile').value = '';
@@ -519,4 +817,10 @@ function printTable() {
 
 function resetForm() {
     app.resetForm();
+}
+
+function updateVarianceCalculations() {
+    if (app.currentSumFiXi2 && app.currentMean) {
+        app.displayVarianceCalculations(app.data, app.currentSumFiXi2, app.currentMean, 2);
+    }
 }

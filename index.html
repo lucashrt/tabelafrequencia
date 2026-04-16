@@ -95,57 +95,59 @@
                             </div>
                         </div>
 
-                        <div class="row mb-4" id="statisticsRow">
+                        <!-- Informações das Classes e Amplitude -->
+                        <div class="row mb-4" id="classInfoRow">
                             <div class="col-md-2 mb-3">
                                 <div class="card text-center border-0 shadow-sm">
                                     <div class="card-body">
-                                        <small class="text-muted">Total</small>
-                                        <h4 id="statCount" class="text-primary">0</h4>
+                                        <small class="text-muted">Qtd. de Dados</small>
+                                        <h4 id="infoDataCount" class="text-primary">0</h4>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-2 mb-3">
                                 <div class="card text-center border-0 shadow-sm">
                                     <div class="card-body">
-                                        <small class="text-muted">Mínimo</small>
-                                        <h4 id="statMin" class="text-info">0</h4>
+                                        <small class="text-muted">Nº de Classes</small>
+                                        <h4 id="infoNumClasses" class="text-info">0</h4>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-2 mb-3">
                                 <div class="card text-center border-0 shadow-sm">
                                     <div class="card-body">
-                                        <small class="text-muted">Máximo</small>
-                                        <h4 id="statMax" class="text-success">0</h4>
+                                        <small class="text-muted">Amp. Classe</small>
+                                        <h4 id="infoClassWidth" class="text-success">0</h4>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-2 mb-3">
                                 <div class="card text-center border-0 shadow-sm">
                                     <div class="card-body">
-                                        <small class="text-muted">Média</small>
-                                        <h4 id="statMean" class="text-warning">0</h4>
+                                        <small class="text-muted">Amp. Total</small>
+                                        <h4 id="infoTotalAmplitude" class="text-warning">0</h4>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-2 mb-3">
                                 <div class="card text-center border-0 shadow-sm">
                                     <div class="card-body">
-                                        <small class="text-muted">Mediana</small>
-                                        <h4 id="statMedian" class="text-secondary">0</h4>
+                                        <small class="text-muted">Lim. Inferior</small>
+                                        <h4 id="infoMinLimit" class="text-secondary">0</h4>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-2 mb-3">
                                 <div class="card text-center border-0 shadow-sm">
                                     <div class="card-body">
-                                        <small class="text-muted">Moda</small>
-                                        <h4 id="statMode" class="text-danger">0</h4>
+                                        <small class="text-muted">Lim. Superior</small>
+                                        <h4 id="infoMaxLimit" class="text-danger">0</h4>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
+                    
+                        <!-- Tabela -->
                         <div class="card shadow-lg border-0">
                             <div class="card-body">
                                 <div class="table-responsive">
@@ -179,9 +181,111 @@
                             </div>
                         </div>
 
+                        <!-- Estatísticas Descritivas -->
+                        <div class="row mb-4 mt-4" id="statisticsRow">
+                            <div class="col-md-4 mb-3">
+                                <div class="card text-center border-0 shadow-sm">
+                                    <div class="card-body">
+                                        <small class="text-muted">Média</small>
+                                        <h4 id="statMean" class="text-warning">0</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card text-center border-0 shadow-sm">
+                                    <div class="card-body">
+                                        <small class="text-muted">Mediana</small>
+                                        <h4 id="statMedian" class="text-secondary">0</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card text-center border-0 shadow-sm">
+                                    <div class="card-body">
+                                        <small class="text-muted">Moda</small>
+                                        <h4 id="statMode" class="text-danger">0</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Escolha de Amostra/População e Cálculos de Variância -->
+                        <div class="card shadow-lg border-0 mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0"><i class="bi bi-calculator"></i> Análise de Variabilidade</h5>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <input type="radio" class="btn-check" name="varianceType" id="variancePopulation" value="population" checked onchange="updateVarianceCalculations()">
+                                        <label class="btn btn-outline-light" for="variancePopulation">População</label>
+                                        
+                                        <input type="radio" class="btn-check" name="varianceType" id="varianceSample" value="sample" onchange="updateVarianceCalculations()">
+                                        <label class="btn btn-outline-light" for="varianceSample">Amostra</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row" id="varianceRow">
+                                    <div class="col-md-3 mb-3">
+                                        <div class="card text-center border-0 shadow-sm">
+                                            <div class="card-body">
+                                                <small class="text-muted">Variância</small>
+                                                <h4 id="calcVariance" class="text-primary">0</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <div class="card text-center border-0 shadow-sm">
+                                            <div class="card-body">
+                                                <small class="text-muted">Desvio Padrão</small>
+                                                <h4 id="calcStdDev" class="text-info">0</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <div class="card text-center border-0 shadow-sm">
+                                            <div class="card-body">
+                                                <small class="text-muted">Coef. Variação</small>
+                                                <h4 id="calcCoeffVar" class="text-success">0%</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <div class="card text-center border-0 shadow-sm">
+                                            <div class="card-body">
+                                                <small class="text-muted">Tipo</small>
+                                                <h4 id="calcType" class="text-warning">População</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Interpretações de Variabilidade e Tendência Central -->
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card text-center border-0 shadow-sm bg-light">
+                                            <div class="card-body">
+                                                <small class="text-muted"><i class="bi bi-bar-chart"></i> Variabilidade</small>
+                                                <h5 id="variabilityType" class="text-dark mt-2">—</h5>
+                                                <small id="variabilityDesc" class="text-muted d-block mt-1"></small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card text-center border-0 shadow-sm bg-light">
+                                            <div class="card-body">
+                                                <small class="text-muted"><i class="bi bi-bullseye"></i> Tendência Central</small>
+                                                <h5 id="centralTendency" class="text-dark mt-2">—</h5>
+                                                <small id="centralTendencyDesc" class="text-muted d-block mt-1"></small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="card shadow-lg border-0 mt-4">
                             <div class="card-header bg-primary text-white">
-                                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Histograma com Curva Normal</h5>
+                                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Histograma </h5>
                             </div>
                             <div class="card-body">
                                 <canvas id="histogramChart" style="max-height: 400px;"></canvas>
