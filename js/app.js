@@ -130,8 +130,24 @@ class FrequencyTable {
             line = line.trim();
             if (line === '') continue;
 
-            // Tenta separadores comuns: vírgula, ponto-e-vírgula, espaço, tab
-            const values = line.split(/[,;\s\t]+/);
+            let values = [];
+            
+            // Conta quantos separadores tem na linha
+            const commaCount = (line.match(/,/g) || []).length;
+            const semicolonCount = (line.match(/;/g) || []).length;
+            
+            // Se tem MÚLTIPLAS vírgulas/pont-vírgulas, é um separador de valores
+            // Se tem só 1 ou 0, pode ser um decimal
+            if (commaCount > 1 || semicolonCount > 1) {
+                // Múltiplos separadores = múltiplos valores na mesma linha
+                values = line.split(/[,;]/);
+            } else if (line.includes(' ') || line.includes('\t')) {
+                // Se tem espaços ou tabs, divide por eles
+                values = line.split(/[\s\t]+/);
+            } else {
+                // Único valor com possível decimal
+                values = [line];
+            }
 
             for (let val of values) {
                 val = val.trim();
@@ -176,8 +192,11 @@ class FrequencyTable {
         // Calcula o número de classes necessárias para cobrir a amplitude total
         let numClasses = Math.ceil(totalAmplitude / classWidth);
 
+        // Detecta se os dados são decimais/pequenos
+        const isDecimalData = classWidth < 1 || Math.abs(min) < 1 || Math.abs(max) < 10;
+
         // Cria as classes
-        let classes = this.createClasses(min, numClasses, classWidth);
+        let classes = this.createClasses(min, numClasses, classWidth, isDecimalData);
 
         // Verifica se o máximo corresponde exatamente ao fim da última classe
         // Se sim, deve criar uma nova classe para ele
@@ -185,7 +204,7 @@ class FrequencyTable {
         if (max === lastClassEnd) {
             // Adiciona uma nova classe
             numClasses++;
-            classes = this.createClasses(min, numClasses, classWidth);
+            classes = this.createClasses(min, numClasses, classWidth, isDecimalData);
         }
 
         // Calcula frequências
@@ -202,13 +221,25 @@ class FrequencyTable {
         document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
     }
 
-    createClasses(min, numClasses, classWidth) {
+    createClasses(min, numClasses, classWidth, isDecimalData = false) {
         const classes = [];
-        let start = Math.floor(min);
+        
+        // Se dados são decimais/pequenos, mantém as casas decimais
+        // Senão, arredonda para inteiro
+        let start;
+        if (isDecimalData) {
+            start = Math.round(min * 100) / 100; // Mantém 2 casas decimais
+        } else {
+            start = Math.floor(min);
+        }
 
         for (let i = 0; i < numClasses; i++) {
-            // Cada classe tem amplitude = classWidth
-            const end = Math.floor(start + classWidth);
+            let end;
+            if (isDecimalData) {
+                end = Math.round((start + classWidth) * 100) / 100; // Mantém 2 casas decimais
+            } else {
+                end = Math.floor(start + classWidth);
+            }
             
             classes.push({
                 start: start,
